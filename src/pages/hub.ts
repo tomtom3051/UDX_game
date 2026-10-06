@@ -34,7 +34,7 @@ export function hubPage(root: HTMLElement): void {
     card.addEventListener('click', () => {
       sfx.click();
       const game = MINIGAMES.find((g) => g.id === card.dataset.id)!;
-      navigate(game.playable ? '/lawn' : `/wip/${game.id}`);
+      navigate(game.playable && game.route ? game.route : `/wip/${game.id}`);
     });
   });
 }

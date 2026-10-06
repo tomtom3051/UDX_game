@@ -15,13 +15,17 @@ export interface Minigame {
   icon: string;
   colour: string;
   playable: boolean;
+  /** Page a playable minigame opens. */
+  route?: string;
 }
 
 export const MINIGAMES: Minigame[] = [
-  { id: 'lawn', name: 'Lawn Mower', description: 'Mow the garden against the clock. Mind the flowers!', icon: '🌱', colour: '#c9efb0', playable: true },
-  { id: 'garden', name: 'Garden Planner', description: 'Lay out the perfect vegetable patch.', icon: '🥕', colour: '#ffe0b8', playable: false },
+  { id: 'lawn', name: 'Lawn Mower', description: 'Mow the garden against the clock. Mind the flowers!', icon: '🌱', colour: '#c9efb0', playable: true, route: '/lawn' },
+  { id: 'pottery', name: 'Pottery Wheel', description: 'Shape and paint your own ceramics. No timer, no pressure.', icon: '🏺', colour: '#f6d9c2', playable: true, route: '/pottery' },
+  { id: 'garden', name: 'Garden Planner', description: 'Plant seeds, water them every day and watch them grow.', icon: '🥕', colour: '#ffe0b8', playable: true, route: '/garden' },
   { id: 'recycling', name: 'Recycling Sort', description: 'Sort the rubbish into the right bins.', icon: '♻️', colour: '#bfe6f5', playable: false },
   { id: 'delivery', name: 'Delivery Run', description: 'Drop off parcels before they are late.', icon: '📦', colour: '#f5d9c4', playable: false },
+  { id: 'windows', name: 'Window Washer', description: 'Leave every pane streak free.', icon: '🪟', colour: '#e6d4f7', playable: false },
   { id: 'fishing', name: 'Fishing Trip', description: 'Catch dinner at the quiet lake.', icon: '🎣', colour: '#cfdcff', playable: false },
 ];
 
@@ -175,3 +179,74 @@ export const MAPS: MapDef[] = [
 export function getMap(id: string): MapDef | undefined {
   return MAPS.find((m) => m.id === id);
 }
+
+// ---------------------------------------------------------------- Pottery Wheel
+
+export const POTTERY = {
+  /** Number of height slices a pot is made of. */
+  rows: 48,
+  minRadius: 14,
+  maxRadius: 125,
+  minHeight: 90,
+  maxHeight: 330,
+  startRadius: 62,
+  startHeight: 170,
+  /** How many neighbouring rows follow the finger while shaping. */
+  shapeSpread: 4,
+  /** Wheel speed in radians per second. */
+  spinSpeed: 5,
+  /** Colour of unpainted clay. */
+  clay: '#c98b62',
+  glazes: [
+    { name: 'Cream', colour: '#f3e6cf' },
+    { name: 'Honey', colour: '#e8b84a' },
+    { name: 'Coral', colour: '#e2725b' },
+    { name: 'Plum', colour: '#7d4f7a' },
+    { name: 'Sky', colour: '#7fb7d9' },
+    { name: 'Ocean', colour: '#2f6f9f' },
+    { name: 'Sage', colour: '#8fb58a' },
+    { name: 'Forest', colour: '#3d7a55' },
+    { name: 'Charcoal', colour: '#3b3b40' },
+  ],
+  /** Brush sizes in rows painted above and below the finger. */
+  brushes: [
+    { name: 'Fine', rows: 0 },
+    { name: 'Medium', rows: 2 },
+    { name: 'Wide', rows: 5 },
+  ],
+  /** Oldest pieces drop off the shelf beyond this number. */
+  shelfLimit: 24,
+};
+
+// ---------------------------------------------------------------- Garden Planner
+
+export interface PlantType {
+  id: string;
+  name: string;
+  blurb: string;
+  /** 0 means the seed is free. */
+  seedPrice: number;
+  /** Watered days needed to reach full bloom. */
+  growDays: number;
+  /** Days in a row without water after which the plant dies. */
+  dryLimit: number;
+  sellPrice: number;
+}
+
+export const GARDEN = {
+  startingCoins: 0,
+  startPlots: 4,
+  /** Price of each extra plot, in order. Start plots plus these gives the maximum (12). */
+  plotPrices: [40, 70, 100, 140, 180, 230, 290, 360],
+  /** Kept plants survive this many times longer without water. */
+  keptResilience: 2,
+  /** Presenter tool: coins added by the "Add coins" button / M key. */
+  presenterCoins: 500,
+  plants: [
+    { id: 'daisy', name: 'Daisy', blurb: 'Cheerful and easy. Seeds are always free.', seedPrice: 0, growDays: 3, dryLimit: 4, sellPrice: 15 },
+    { id: 'tulip', name: 'Tulip', blurb: 'A reliable spring classic.', seedPrice: 30, growDays: 4, dryLimit: 4, sellPrice: 60 },
+    { id: 'sunflower', name: 'Sunflower', blurb: 'Grows tall, gets thirsty fast.', seedPrice: 60, growDays: 6, dryLimit: 3, sellPrice: 140 },
+    { id: 'cactus', name: 'Cactus', blurb: 'Slow, but shrugs off a dry week.', seedPrice: 80, growDays: 9, dryLimit: 8, sellPrice: 220 },
+    { id: 'rose', name: 'Rose', blurb: 'Valuable and delicate. Do not skip a day.', seedPrice: 150, growDays: 7, dryLimit: 2, sellPrice: 350 },
+  ] as PlantType[],
+};

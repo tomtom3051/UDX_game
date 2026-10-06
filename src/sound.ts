@@ -3,6 +3,7 @@ import { persist, save } from './state';
 
 let ctx: AudioContext | null = null;
 let engine: { osc: OscillatorNode; gain: GainNode } | null = null;
+let wheel: { osc: OscillatorNode; gain: GainNode } | null = null;
 
 function audio(): AudioContext | null {
   if (save.muted) return null;
@@ -71,6 +72,36 @@ export const sfx = {
   win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, 'triangle', 0.1, i * 0.11)),
   lose: () => [392, 330, 262].forEach((f, i) => tone(f, 0.28, 'triangle', 0.1, i * 0.16)),
 
+  water: () => {
+    noise(0.3, 0.12, 2600, 700);
+    tone(620, 0.12, 'sine', 0.06, 0.02, 380);
+  },
+  dab: () => tone(340, 0.09, 'sine', 0.07, 0, 260),
+
+  /** Soft hum of the pottery wheel. */
+  wheel(on: boolean): void {
+    if (!on) {
+      if (wheel && ctx) {
+        wheel.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.08);
+        wheel.osc.stop(ctx.currentTime + 0.5);
+      }
+      wheel = null;
+      return;
+    }
+    if (wheel) return;
+    const ac = audio();
+    if (!ac) return;
+    const osc = ac.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = 82;
+    const gain = ac.createGain();
+    gain.gain.value = 0;
+    gain.gain.setTargetAtTime(0.035, ac.currentTime, 0.4);
+    osc.connect(gain).connect(ac.destination);
+    osc.start();
+    wheel = { osc, gain };
+  },
+
   /** Low mower hum while a job is running. */
   engine(on: boolean): void {
     if (!on) {
@@ -100,7 +131,10 @@ export const sfx = {
 };
 
 export function toggleMute(): boolean {
-  if (!save.muted) sfx.engine(false);
+  if (!save.muted) {
+    sfx.engine(false);
+    sfx.wheel(false);
+  }
   save.muted = !save.muted;
   persist();
   return save.muted;
