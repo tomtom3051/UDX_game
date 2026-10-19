@@ -1,5 +1,4 @@
 import {
-  COOLDOWN_MS,
   MAPS,
   PRESENTER_MONEY,
   SPEED_TIERS,
@@ -10,7 +9,9 @@ import {
 import { isPass } from '../grading';
 import { navigate } from '../router';
 import { muteButton, sfx } from '../sound';
-import { cooldownRemaining, persist, resetProgress, save } from '../state';
+import { breakBannerHtml, ensureSession, isOnBreak, onPhaseChange, sessionStripHtml } from '../session';
+import { persistSettings, settings } from '../settings';
+import { persist, resetProgress, save } from '../state';
 
 type UpgradeKey = 'speedTier' | 'widthTier';
 
@@ -18,11 +19,6 @@ const UPGRADES: { key: UpgradeKey; name: string; icon: string; unit: string; val
   { key: 'speedTier', name: 'Speed', icon: '⚡', unit: 'px/s', values: SPEED_TIERS },
   { key: 'widthTier', name: 'Mowing width', icon: '↔️', unit: 'px', values: WIDTH_TIERS },
 ];
-
-function formatClock(ms: number): string {
-  const total = Math.ceil(ms / 1000);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
 
 function isUnlocked(map: MapDef): boolean {
   return !map.requires || isPass(save.best[map.requires]);
@@ -39,7 +35,7 @@ export function basePage(root: HTMLElement): () => void {
   let toolsOpen = false;
 
   function render(): void {
-    const cooling = cooldownRemaining() > 0;
+    const cooling = isOnBreak();
     root.innerHTML = `
       <header class="bar">
         <button class="icon-btn" data-act="back" aria-label="Back to hub">←</button>
@@ -51,18 +47,17 @@ export function basePage(root: HTMLElement): () => void {
 
       <div class="tools ${toolsOpen ? '' : 'hidden'}">
         <span class="tools-title">Presenter tools</span>
-        <button class="btn small" data-act="skip">Skip cooldown <kbd>K</kbd></button>
         <button class="btn small" data-act="money">Add ${PRESENTER_MONEY} money <kbd>M</kbd></button>
         <button class="btn small danger" data-act="reset">${resetArmed ? 'Tap again to confirm' : 'Reset all progress'}</button>
       </div>
 
-      <div class="cooldown ${cooling ? '' : 'hidden'}">
-        <span class="cooldown-icon">☕</span>
-        <div>
-          <b>Time for a break: <span class="cooldown-clock">${formatClock(cooldownRemaining())}</span></b>
-          <p>Jobs open again after ${Math.round(COOLDOWN_MS / 60000)} minutes. The pause is there to encourage a break from the screen. The shop stays open.</p>
-        </div>
-      </div>
+      ${sessionStripHtml()}
+      ${breakBannerHtml('You can still look around and use the shop, but jobs open again after the break.')}
+
+      <label class="toggle-row timer-toggle">
+        <span><b>Job timer</b><small>${settings.lawnTimer ? 'Beat the clock for a time bonus.' : 'Relaxed: no clock, take as long as you like.'}</small></span>
+        <input type="checkbox" data-timer ${settings.lawnTimer ? 'checked' : ''} />
+      </label>
 
       <h2 class="section-title">Job board</h2>
       <div class="jobs">
@@ -82,7 +77,7 @@ export function basePage(root: HTMLElement): () => void {
             </div>
             <div class="job-stats">
               <span>📐 ${sizeLabel(map)}</span>
-              <span>⏱ ${map.timeLimit} s</span>
+              <span>⏱ ${settings.lawnTimer ? `${map.timeLimit} s` : 'No limit'}</span>
               <span>💰 ${map.basePayout}</span>
             </div>
             <div class="job-bottom">
@@ -137,10 +132,6 @@ export function basePage(root: HTMLElement): () => void {
       return;
     }
     if (action === 'tools') toolsOpen = !toolsOpen;
-    if (action === 'skip') {
-      save.cooldownEnd = 0;
-      persist();
-    }
     if (action === 'money') {
       save.money += PRESENTER_MONEY;
       persist();
@@ -180,29 +171,27 @@ export function basePage(root: HTMLElement): () => void {
 
   function onKey(e: KeyboardEvent): void {
     if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key.toLowerCase() === 'k') act('skip');
     if (e.key.toLowerCase() === 'm') act('money');
   }
 
-  // Update the countdown every tick, and rerender once when the cooldown ends.
-  let wasCooling = cooldownRemaining() > 0;
-  const timer = window.setInterval(() => {
-    const remaining = cooldownRemaining();
-    if (remaining > 0) {
-      const clock = root.querySelector('.cooldown-clock');
-      if (clock) clock.textContent = formatClock(remaining);
-    } else if (wasCooling) {
-      render();
-    }
-    wasCooling = remaining > 0;
-  }, 250);
+  // Entering the game starts the shared play session; re-render when it starts or ends.
+  const stopListening = onPhaseChange(() => render());
+  ensureSession();
 
   root.addEventListener('click', onClick);
+  root.addEventListener('change', (e) => {
+    const input = e.target as HTMLInputElement;
+    if (input.dataset.timer === undefined) return;
+    settings.lawnTimer = input.checked;
+    persistSettings();
+    sfx.click();
+    render();
+  });
   window.addEventListener('keydown', onKey);
   render();
 
   return () => {
-    window.clearInterval(timer);
+    stopListening();
     window.removeEventListener('keydown', onKey);
   };
 }

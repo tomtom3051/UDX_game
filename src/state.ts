@@ -1,4 +1,4 @@
-import { COOLDOWN_MS, STARTING_MONEY, type Grade } from './config';
+import { STARTING_MONEY, type Grade } from './config';
 import type { JobReport } from './grading';
 
 const KEY = 'pocket-jobs-save-v1';
@@ -9,19 +9,20 @@ export interface Save {
   widthTier: number;
   /** Best grade per map id. */
   best: Record<string, Grade>;
-  /** Timestamp (ms) when the cooldown ends. 0 means no cooldown. */
-  cooldownEnd: number;
-  muted: boolean;
 }
 
 function fresh(): Save {
-  return { money: STARTING_MONEY, speedTier: 0, widthTier: 0, best: {}, cooldownEnd: 0, muted: false };
+  return { money: STARTING_MONEY, speedTier: 0, widthTier: 0, best: {} };
 }
 
 function load(): Save {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...fresh(), ...JSON.parse(raw) };
+    if (raw) {
+      // Drop fields from older versions (the per-job cooldown and the mute flag).
+      const { money, speedTier, widthTier, best } = { ...fresh(), ...JSON.parse(raw) };
+      return { money, speedTier, widthTier, best };
+    }
   } catch {
     // Corrupt or unavailable storage: start fresh.
   }
@@ -39,17 +40,7 @@ export function persist(): void {
 }
 
 export function resetProgress(): void {
-  const muted = save.muted;
-  Object.assign(save, fresh(), { muted });
-  persist();
-}
-
-export function cooldownRemaining(): number {
-  return Math.max(0, save.cooldownEnd - Date.now());
-}
-
-export function startCooldown(): void {
-  save.cooldownEnd = Date.now() + COOLDOWN_MS;
+  Object.assign(save, fresh());
   persist();
 }
 

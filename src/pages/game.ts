@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 import { getMap, MAPS, PASS_COVERAGE, SPEED_TIERS, WIDTH_TIERS } from '../config';
+import { settings } from '../settings';
 import { LawnScene, VIEW_H, VIEW_W, type HudState } from '../game/LawnScene';
 import { BLOCKED, MOWED, type Grid } from '../game/grid';
 import { betterGrade, gradeJob, isPass, type JobOutcome } from '../grading';
 import { navigate } from '../router';
 import { muteButton, sfx } from '../sound';
-import { cooldownRemaining, persist, save, setLastReport, startCooldown } from '../state';
+import { enterGame, isOnBreak, leaveGame, touch } from '../session';
+import { persist, save, setLastReport } from '../state';
 
 function formatClock(seconds: number): string {
   const total = Math.ceil(seconds);
@@ -16,17 +18,19 @@ export function gamePage(root: HTMLElement, [mapId]: string[]): void | (() => vo
   const map = getMap(mapId);
   const required = map?.requires ? MAPS.find((m) => m.id === map.requires) : undefined;
   const locked = required !== undefined && !isPass(save.best[required.id]);
-  if (!map || locked || cooldownRemaining() > 0) {
+  if (!map || locked || isOnBreak()) {
     navigate('/lawn', true);
     return;
   }
+  // Entering the job screen; if play time runs out during the job, the player still finishes it.
+  enterGame();
 
   root.classList.add('game');
   root.innerHTML = `
     <div class="game-canvas"></div>
     <div class="hud">
       <div class="hud-row">
-        <div class="pill time"><span>⏱</span><b class="hud-time"></b></div>
+        <div class="pill time ${settings.lawnTimer ? '' : 'hidden'}"><span>⏱</span><b class="hud-time"></b></div>
         <div class="pill coverage">
           <div class="cov-text"><b class="hud-cov">0%</b><span>mowed</span></div>
           <div class="cov-bar"><i class="cov-fill"></i><em style="left:${PASS_COVERAGE}%"></em></div>
@@ -64,6 +68,7 @@ export function gamePage(root: HTMLElement, [mapId]: string[]): void | (() => vo
 
   let shownBeds = 0;
   function onHud(h: HudState): void {
+    touch();
     timeEl.textContent = formatClock(h.timeLeft);
     timeEl.parentElement!.classList.toggle('low', h.timeLeft <= 15);
     covEl.textContent = `${Math.floor(h.coverage)}%`;
@@ -122,7 +127,6 @@ export function gamePage(root: HTMLElement, [mapId]: string[]): void | (() => vo
     save.money += report.payout;
     save.best[map!.id] = betterGrade(save.best[map!.id], report.grade);
     persist();
-    startCooldown();
     setLastReport(report);
     navigate('/lawn/results', true);
   }
@@ -131,6 +135,7 @@ export function gamePage(root: HTMLElement, [mapId]: string[]): void | (() => vo
     map,
     speed: SPEED_TIERS[save.speedTier],
     width: WIDTH_TIERS[save.widthTier],
+    timed: settings.lawnTimer,
     onHud,
     onCountdown,
     onMinimap,
@@ -187,6 +192,8 @@ export function gamePage(root: HTMLElement, [mapId]: string[]): void | (() => vo
   window.addEventListener('keydown', onKey);
 
   return () => {
+    // Leaving the job screen (results, back button, quit). Starts the break if play time ran out.
+    leaveGame();
     window.removeEventListener('keydown', onKey);
     window.removeEventListener('resize', refresh);
     sfx.engine(false);

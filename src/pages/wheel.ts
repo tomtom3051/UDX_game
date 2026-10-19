@@ -3,6 +3,8 @@ import { navigate } from '../router';
 import { sfx } from '../sound';
 import { clonePot, drawPot, newPot, type Pattern, type Pot } from '../pottery/pot';
 import { persistStudio, putOnShelf, studio, type Step } from '../pottery/store';
+import { enterGame, isOnBreak, leaveGame, touch } from '../session';
+import { toast } from '../ui';
 
 const W = 390;
 const H = 844;
@@ -21,7 +23,13 @@ function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v));
 }
 
-export function wheelPage(root: HTMLElement): () => void {
+export function wheelPage(root: HTMLElement): void | (() => void) {
+  if (isOnBreak()) {
+    navigate('/pottery', true);
+    return;
+  }
+  // Entering the wheel; if play time runs out here, the player may finish the piece.
+  enterGame();
   if (!studio.current) studio.current = { pot: newPot(), step: 'shape' };
   const session = studio.current;
   let pot: Pot = session.pot;
@@ -71,7 +79,7 @@ export function wheelPage(root: HTMLElement): () => void {
       <div class="sheet">
         <h2>Lovely piece</h2>
         <canvas class="sheet-pot"></canvas>
-        <button class="btn primary" data-act="shelf">Put on shelf</button>
+        <button class="btn primary" data-act="shelf">${session.editing ? 'Put back on shelf' : 'Put on shelf'}</button>
         <button class="btn" data-act="keep">Keep working</button>
       </div>
     </div>
@@ -237,6 +245,7 @@ export function wheelPage(root: HTMLElement): () => void {
   });
   canvas.addEventListener('pointermove', (e) => {
     if (!drag) return;
+    touch();
     const p = toCanvas(e);
     if (step === 'shape') shape(p.x, p.y);
     else paint(p.y);
@@ -267,7 +276,10 @@ export function wheelPage(root: HTMLElement): () => void {
       if (previous) pot = previous;
     } else if (d.act === 'restart') {
       pushUndo();
-      pot = { ...newPot(), id: pot.id };
+      // A reworked shelf piece keeps its paint, so starting the shape over does not wipe it.
+      pot = session.editing
+        ? { ...newPot(), id: pot.id, colours: [...pot.colours], patterns: [...pot.patterns] }
+        : { ...newPot(), id: pot.id };
     } else if (d.act === 'done') {
       overlay.classList.remove('hidden');
       sfx.win();
@@ -291,6 +303,9 @@ export function wheelPage(root: HTMLElement): () => void {
   frame = requestAnimationFrame(loop);
 
   return () => {
+    // Keep a stroke that was still in progress when the page closed.
+    if (drag) save();
+    if (leaveGame()) toast('Your play time is up. Time for a break!');
     cancelAnimationFrame(frame);
     sfx.wheel(false);
   };

@@ -30,6 +30,15 @@ function render(): void {
   navigate('/', true);
 }
 
+/** Renders the current route again, for example when a play session starts or ends. */
+export function refresh(): void {
+  render();
+}
+
+export function currentPath(): string {
+  return location.hash.replace(/^#/, '') || '/';
+}
+
 export function startRouter(): void {
   window.addEventListener('hashchange', render);
   render();

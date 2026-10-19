@@ -29,6 +29,40 @@ export const MINIGAMES: Minigame[] = [
   { id: 'fishing', name: 'Fishing Trip', description: 'Catch dinner at the quiet lake.', icon: '🎣', colour: '#cfdcff', playable: false },
 ];
 
+// ---------------------------------------------------------------- Play sessions
+
+/**
+ * Entering a timed game starts one shared play session. When it runs out, timed games
+ * lock for a break. A session left untouched (app closed or idle) for IDLE_RESET_MS resets.
+ * Fast mode (Settings > Presenter tools) shortens everything for testing.
+ */
+export const SESSION = {
+  playMs: 15 * 60 * 1000,
+  breakMs: 15 * 60 * 1000,
+  idleResetMs: 15 * 60 * 1000,
+  warnAtMs: 60 * 1000,
+  fast: { playMs: 60 * 1000, breakMs: 30 * 1000, idleResetMs: 45 * 1000, warnAtMs: 20 * 1000 },
+  /** Games that use the session. The garden is excluded on purpose: watering is a short daily check-in. */
+  timedGames: ['lawn', 'pottery'],
+};
+
+/** Music volume (0 to 1), and the lower level used while the mower engine runs. */
+export const MUSIC = { src: ['music/theme.ogg', 'music/theme.m4a'], volume: 0.35, duckedVolume: 0.12 };
+
+export interface ThemePreset {
+  id: string;
+  name: string;
+  accent: string;
+  background: string;
+}
+
+export const THEMES: ThemePreset[] = [
+  { id: 'meadow', name: 'Meadow', accent: '#3fa34d', background: '#f3f9ea' },
+  { id: 'ocean', name: 'Ocean', accent: '#2f80c4', background: '#eef5fb' },
+  { id: 'sunset', name: 'Sunset', accent: '#e0703c', background: '#fdf3ec' },
+  { id: 'lavender', name: 'Lavender', accent: '#8b62c9', background: '#f6f2fc' },
+];
+
 // ---------------------------------------------------------------- Lawn Mower
 
 /** Size of one grass cell in px. Map sizes should be multiples of this. */
@@ -45,8 +79,6 @@ export const BED_PENALTY = 5;
 /** Maximum score bonus for finishing early (scaled by the fraction of time left). */
 export const MAX_TIME_BONUS = 5;
 
-/** Break between jobs. */
-export const COOLDOWN_MS = 15 * 60 * 1000;
 
 /** Presenter tool: money added by the "Add money" button / M key. */
 export const PRESENTER_MONEY = 1000;

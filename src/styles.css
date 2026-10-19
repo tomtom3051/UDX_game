@@ -1,17 +1,24 @@
 :root {
   --phone-scale: 1;
+  /* Theme inputs, set from settings.ts. Everything below is derived from them. */
+  --accent: #3fa34d;
   --bg: #f3f9ea;
+  --on-accent: #ffffff;
+  --accent-dark: color-mix(in srgb, var(--accent) 72%, black);
+  --accent-soft: color-mix(in srgb, var(--accent) 17%, white);
   --card: #ffffff;
-  --ink: #1f3324;
-  --ink-soft: #5d7263;
-  --green: #3fa34d;
-  --green-dark: #2c7a39;
-  --green-soft: #dff2d2;
+  --ink: color-mix(in srgb, var(--accent) 16%, #16201a);
+  --ink-soft: color-mix(in srgb, var(--accent) 14%, #57625b);
+  --line: color-mix(in srgb, var(--accent) 12%, #ececea);
+  --surface: color-mix(in srgb, var(--accent) 11%, #f0f2ee);
+  --surface-edge: color-mix(in srgb, var(--accent) 20%, #ccd1c8);
+  --muted: color-mix(in srgb, var(--accent) 5%, #e8eae5);
+  --muted-ink: color-mix(in srgb, var(--accent) 8%, #98a097);
+  --shadow: 0 6px 18px color-mix(in srgb, var(--accent-dark) 14%, transparent);
+  /* Fixed, meaning-carrying colours (money, warnings). */
   --yellow: #ffc94a;
   --yellow-dark: #b7790a;
   --red: #e5483f;
-  --line: #e2ecd8;
-  --shadow: 0 6px 18px rgba(40, 80, 40, 0.1);
   font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Segoe UI', system-ui, sans-serif;
   color: var(--ink);
 }
@@ -30,13 +37,13 @@ body {
 }
 
 body {
-  background: #1f3324;
+  background: var(--ink);
   user-select: none;
   -webkit-user-select: none;
 }
 
 body.framed {
-  background: radial-gradient(circle at 30% 20%, #cfeab8, #8fc98a 55%, #5fa86c);
+  background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--accent) 30%, white), color-mix(in srgb, var(--accent) 60%, white) 55%, color-mix(in srgb, var(--accent) 85%, white));
 }
 
 /* ------------------------------------------------------------ phone frame */
@@ -144,9 +151,9 @@ button {
   border-radius: 18px;
   font-weight: 800;
   font-size: 16px;
-  background: #e9f1e1;
+  background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 4px 0 #cbd8c0;
+  box-shadow: 0 4px 0 var(--surface-edge);
   transition:
     transform 0.08s,
     box-shadow 0.08s,
@@ -155,13 +162,13 @@ button {
 
 .btn:active:not(:disabled) {
   transform: translateY(3px);
-  box-shadow: 0 1px 0 #cbd8c0;
+  box-shadow: 0 1px 0 var(--surface-edge);
 }
 
 .btn.primary {
-  background: var(--green);
-  color: #fff;
-  box-shadow: 0 4px 0 var(--green-dark);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 4px 0 var(--accent-dark);
 }
 
 .btn.accent {
@@ -186,9 +193,9 @@ button {
 
 .btn:disabled {
   cursor: not-allowed;
-  background: #e6eae2;
-  color: #98a596;
-  box-shadow: 0 3px 0 #d3d9ce;
+  background: var(--muted);
+  color: var(--muted-ink);
+  box-shadow: 0 3px 0 var(--surface-edge);
 }
 
 .icon-btn {
@@ -236,13 +243,13 @@ button {
 }
 
 .badge-play {
-  background: var(--green);
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .badge-soon {
-  background: #edf0ea;
-  color: #7c8a7d;
+  background: var(--muted);
+  color: var(--muted-ink);
 }
 
 .game-icon {
@@ -267,7 +274,7 @@ button {
 
 .hub-header h1 {
   font-size: 34px;
-  color: var(--green-dark);
+  color: var(--accent-dark);
 }
 
 .tagline {
@@ -304,8 +311,8 @@ button {
   flex-direction: row;
   align-items: center;
   padding: 18px 16px;
-  border: 3px solid var(--green);
-  background: linear-gradient(120deg, #ffffff, #ecf8e2);
+  border: 3px solid var(--accent);
+  background: linear-gradient(120deg, #ffffff, color-mix(in srgb, var(--accent) 9%, white));
 }
 
 .game-card.playable .game-icon {
@@ -401,7 +408,7 @@ button {
   margin-top: 12px;
   padding: 12px;
   border-radius: 16px;
-  background: #eef1ea;
+  background: var(--muted);
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -428,7 +435,7 @@ button {
 kbd {
   font: inherit;
   font-size: 10px;
-  background: #e3e8de;
+  background: var(--surface);
   border-radius: 5px;
   padding: 1px 5px;
 }
@@ -480,7 +487,7 @@ kbd {
 }
 
 .job-card.locked {
-  background: #eef1ea;
+  background: var(--muted);
   box-shadow: none;
 }
 
@@ -557,8 +564,8 @@ kbd {
 }
 
 .grade-none {
-  background: #e6eae2;
-  color: #98a596;
+  background: var(--muted);
+  color: var(--muted-ink);
 }
 
 .grade-A {
@@ -631,11 +638,11 @@ kbd {
   flex: 1;
   height: 8px;
   border-radius: 4px;
-  background: #e6eae2;
+  background: var(--muted);
 }
 
 .pips i.on {
-  background: var(--green);
+  background: var(--accent);
 }
 
 .shop-effect {
@@ -644,7 +651,7 @@ kbd {
 }
 
 .shop-effect b {
-  color: var(--green-dark);
+  color: var(--accent-dark);
 }
 
 .shop-card .btn {
@@ -744,7 +751,7 @@ kbd {
   position: relative;
   height: 7px;
   border-radius: 4px;
-  background: #dfe6d8;
+  background: var(--muted);
 }
 
 .cov-fill {
@@ -758,7 +765,7 @@ kbd {
 }
 
 .cov-fill.pass {
-  background: var(--green);
+  background: var(--accent);
 }
 
 .cov-bar em {
@@ -835,7 +842,7 @@ kbd {
   position: fixed;
   z-index: 5;
   inset: 0;
-  background: rgba(20, 40, 22, 0.6);
+  background: color-mix(in srgb, var(--ink) 62%, transparent);
   display: grid;
   place-items: center;
   padding: 30px;
@@ -950,8 +957,6 @@ kbd {
 
 .page.pottery,
 .page.wheel {
-  --bg: #fbf3ea;
-  --line: #eedfce;
   background: var(--bg);
 }
 
@@ -1111,7 +1116,7 @@ kbd {
 
 .duel-score b {
   font-size: 30px;
-  color: var(--green-dark);
+  color: var(--accent-dark);
 }
 
 /* wheel */
@@ -1163,13 +1168,13 @@ kbd {
 }
 
 .segmented button.on {
-  background: #c8693f;
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .segmented.small {
   box-shadow: none;
-  background: #f1e6d8;
+  background: var(--surface);
   border-radius: 12px;
   padding: 3px;
 }
@@ -1237,7 +1242,7 @@ kbd {
   transform: scale(1.18);
   outline: 3px solid #fff;
   box-shadow:
-    0 0 0 5px #c8693f,
+    0 0 0 5px var(--accent),
     inset 0 -3px 0 rgba(0, 0, 0, 0.15);
 }
 
@@ -1247,21 +1252,11 @@ kbd {
   gap: 8px;
 }
 
-.page.wheel .btn.primary,
-.page.pottery .btn.primary {
-  background: #c8693f;
-  box-shadow: 0 4px 0 #9c4d2a;
-}
-
-.page.pottery .btn.primary.small {
-  box-shadow: 0 3px 0 #9c4d2a;
-}
 
 /* ------------------------------------------------------------ garden */
 
 .page.garden {
-  --bg: #eef7e4;
-  background: linear-gradient(#dff1fb, #eef7e4 180px);
+  background: linear-gradient(color-mix(in srgb, #bfe3f7 55%, var(--bg)), var(--bg) 180px);
 }
 
 .garden-status {
@@ -1278,8 +1273,8 @@ kbd {
 }
 
 .day-chip {
-  background: var(--green-soft);
-  color: var(--green-dark);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
   border-radius: 10px;
   padding: 5px 10px;
   font-weight: 800;
@@ -1297,8 +1292,8 @@ kbd {
   position: relative;
   height: 134px;
   border-radius: 18px;
-  background: #cfe8b4;
-  box-shadow: inset 0 -5px 0 rgba(60, 100, 40, 0.14);
+  background: color-mix(in srgb, var(--accent) 24%, white);
+  box-shadow: inset 0 -5px 0 color-mix(in srgb, var(--accent-dark) 16%, transparent);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1324,7 +1319,7 @@ kbd {
   position: relative;
   font-size: 11px;
   font-weight: 800;
-  color: #3d5a2c;
+  color: var(--accent-dark);
   background: rgba(255, 255, 255, 0.75);
   border-radius: 8px;
   padding: 2px 7px;
@@ -1334,7 +1329,7 @@ kbd {
 .plot.locked {
   background: none;
   box-shadow: none;
-  border: 2px dashed #a9c98c;
+  border: 2px dashed color-mix(in srgb, var(--accent) 50%, white);
   justify-content: center;
   gap: 6px;
 }
@@ -1342,12 +1337,12 @@ kbd {
 .plot.empty .plot-label,
 .plot.locked .plot-label {
   background: none;
-  color: #6f8f58;
+  color: color-mix(in srgb, var(--accent-dark) 75%, white);
 }
 
 .plot-plus {
   font-size: 26px;
-  color: #8fb373;
+  color: color-mix(in srgb, var(--accent) 65%, white);
 }
 
 .plot.locked {
@@ -1442,7 +1437,7 @@ kbd {
   border-radius: 16px;
   padding: 6px 10px 6px 4px;
   text-align: left;
-  box-shadow: 0 2px 8px rgba(40, 80, 40, 0.08);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent-dark) 10%, transparent);
 }
 
 .seed:disabled {
@@ -1500,13 +1495,13 @@ kbd {
   font-weight: 800;
   border-radius: 999px;
   padding: 4px 10px;
-  background: #e9f1e1;
+  background: var(--surface);
   color: var(--ink-soft);
 }
 
 .chip.healthy {
-  background: var(--green-soft);
-  color: var(--green-dark);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
 }
 
 .chip.thirsty,
@@ -1519,4 +1514,225 @@ kbd {
 .chip.dead {
   background: #fde3e1;
   color: #a3241d;
+}
+
+/* ------------------------------------------------------------ play session */
+
+.session-strip {
+  margin-top: 12px;
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 13px;
+  text-align: center;
+}
+
+.session-strip b {
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-break {
+  background: #e4f1fb;
+  color: #1c4a6b;
+}
+#toast {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 150px;
+  z-index: 20;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  transform: translateY(-20px);
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+  pointer-events: none;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: none;
+}
+
+/* ------------------------------------------------------------ settings */
+
+.hub-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-card {
+  background: var(--card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 6px 14px;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.toggle-row:last-child {
+  border-bottom: 0;
+}
+
+.toggle-row span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggle-row small {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.toggle-row input {
+  appearance: none;
+  flex: none;
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  background: var(--muted);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle-row input::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s;
+}
+
+.toggle-row input:checked {
+  background: var(--accent);
+}
+
+.toggle-row input:checked::after {
+  transform: translateX(20px);
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 12px 0 4px;
+}
+
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.theme-swatch {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  outline: 3px solid transparent;
+  outline-offset: 3px;
+  transition: outline-color 0.15s;
+}
+
+.theme-option.on {
+  color: var(--ink);
+}
+
+.theme-option.on .theme-swatch {
+  outline-color: var(--ink);
+}
+
+.theme-swatch.custom {
+  box-shadow: inset 0 0 0 6px #fff;
+}
+
+/* Rainbow until the player has picked their own colour. */
+.theme-option:not(.on) > .theme-swatch.custom {
+  background-image: conic-gradient(#e5483f, #ffc94a, #3fa34d, #2f80c4, #8b62c9, #e5483f);
+}
+
+.theme-swatch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.settings-note {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  padding: 8px 0 10px;
+  margin: 0;
+}
+
+.presenter {
+  margin-top: 22px;
+}
+
+.presenter summary {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+  margin: 0 4px 10px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.presenter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 6px;
+}
+
+.toggle-row.timer-toggle {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.results-break {
+  background: #e4f1fb;
+  color: #1c4a6b;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
 }

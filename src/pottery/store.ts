@@ -6,8 +6,10 @@ const KEY = 'pocket-jobs-pottery-v1';
 export type Step = 'shape' | 'paint';
 
 interface PotterySave {
-  /** Piece on the wheel right now, so leaving never loses progress. */
-  current: { pot: Pot; step: Step } | null;
+  /** Piece on the wheel right now, so leaving never loses progress.
+   * `editing` marks a piece reopened from the shelf; the shelf copy stays as it was until it is put back.
+   */
+  current: { pot: Pot; step: Step; editing?: boolean } | null;
   shelf: Pot[];
 }
 
@@ -31,9 +33,15 @@ export function persistStudio(): void {
   }
 }
 
+/** Puts a piece on the shelf. A reworked piece replaces its earlier version in place. */
 export function putOnShelf(pot: Pot): void {
-  studio.shelf.unshift(pot);
-  studio.shelf.length = Math.min(studio.shelf.length, POTTERY.shelfLimit);
+  const index = studio.shelf.findIndex((p) => p.id === pot.id);
+  if (index >= 0) {
+    studio.shelf[index] = pot;
+  } else {
+    studio.shelf.unshift(pot);
+    studio.shelf.length = Math.min(studio.shelf.length, POTTERY.shelfLimit);
+  }
   studio.current = null;
   persistStudio();
 }

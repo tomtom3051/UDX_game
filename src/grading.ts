@@ -17,6 +17,8 @@ export interface JobOutcome {
   bedsDestroyed: number;
   timeLeft: number; // seconds
   reason: EndReason;
+  /** Played without the job timer (relaxed mode). There is no time bonus. */
+  relaxed?: boolean;
 }
 
 export interface JobReport extends JobOutcome {

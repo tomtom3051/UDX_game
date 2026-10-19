@@ -1,6 +1,7 @@
 import { getMap } from '../config';
 import { navigate } from '../router';
 import { sfx } from '../sound';
+import { isOnBreak } from '../session';
 import { lastReport } from '../state';
 
 function formatClock(seconds: number): string {
@@ -39,12 +40,12 @@ export function resultsPage(root: HTMLElement): void {
       <div class="stats">
         <div><span>Lawn mowed</span><b>${report.coverage.toFixed(1)}%</b></div>
         <div><span>Flower beds destroyed</span><b>${report.bedsDestroyed}</b></div>
-        <div><span>Time remaining</span><b>${formatClock(report.timeLeft)}</b></div>
+        <div><span>${report.relaxed ? 'Job timer' : 'Time remaining'}</span><b>${report.relaxed ? 'Off (relaxed)' : formatClock(report.timeLeft)}</b></div>
         <div><span>Final score</span><b>${report.score.toFixed(1)}</b></div>
         <div class="payout"><span>Payout</span><b>💰 ${report.payout}</b></div>
       </div>
+      ${isOnBreak() ? '<p class="results-break">☕ Your play time is up. Time for a break before the next job.</p>' : ''}
       <button class="btn primary" id="to-base">Back to base</button>
-      <p class="footnote">Time for a short break before the next job.</p>
     </div>
   `;
   root.querySelector('#to-base')!.addEventListener('click', () => {

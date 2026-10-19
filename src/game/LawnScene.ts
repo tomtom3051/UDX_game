@@ -34,6 +34,8 @@ export interface SceneOpts {
   map: MapDef;
   speed: number;
   width: number;
+  /** False for relaxed mode: no countdown, the job never ends on time. */
+  timed: boolean;
   onHud(state: HudState): void;
   onCountdown(text: string | null): void;
   onMinimap(grid: Grid, x: number, y: number): void;
@@ -311,8 +313,8 @@ export class LawnScene extends Phaser.Scene {
     if (this.state !== 'playing') return;
     const dt = Math.min(deltaMs, 50) / 1000;
 
-    this.timeLeft -= dt;
-    if (this.timeLeft <= 0) {
+    if (this.opts.timed) this.timeLeft -= dt;
+    if (this.opts.timed && this.timeLeft <= 0) {
       this.timeLeft = 0;
       this.pushHud();
       this.end('time');
@@ -461,8 +463,10 @@ export class LawnScene extends Phaser.Scene {
       mapId: this.opts.map.id,
       coverage: coveragePercent(this.grid),
       bedsDestroyed: this.bedsDestroyed,
-      timeLeft: this.timeLeft,
+      // Relaxed jobs have no time left to reward.
+      timeLeft: this.opts.timed ? this.timeLeft : 0,
       reason,
+      relaxed: !this.opts.timed,
     };
   }
 

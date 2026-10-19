@@ -1,7 +1,8 @@
 import { navigate } from '../router';
 import { muteButton, sfx } from '../sound';
-import { drawPot, newPot, potFromProfile, type Pot } from '../pottery/pot';
+import { clonePot, drawPot, newPot, potFromProfile, type Pot } from '../pottery/pot';
 import { persistStudio, removeFromShelf, studio } from '../pottery/store';
+import { breakBannerHtml, ensureSession, isOnBreak, onPhaseChange, sessionStripHtml } from '../session';
 
 /** Prepares a canvas for crisp drawing at a logical size. */
 function setupCanvas(canvas: HTMLCanvasElement, w: number, h: number): CanvasRenderingContext2D {
@@ -36,10 +37,13 @@ const DUEL_ATTEMPT = potFromProfile((t) => 40 + 38 * Math.sin(t * 2.4) - 20 * t 
 export function potteryPage(root: HTMLElement): () => void {
   root.classList.add('pottery');
   let frame = 0;
+  /** Two-tap confirm before an unfinished piece on the wheel is replaced. */
+  let confirmReplace: string | null = null;
 
   function render(): void {
     cancelAnimationFrame(frame);
     const current = studio.current;
+    const resting = isOnBreak();
     root.innerHTML = `
       <header class="bar">
         <button class="icon-btn" data-act="back" aria-label="Back to hub">←</button>
@@ -47,13 +51,16 @@ export function potteryPage(root: HTMLElement): () => void {
         <span class="mute-slot"></span>
       </header>
 
+      ${sessionStripHtml()}
+      ${breakBannerHtml('You can still look at your shelf. The wheel opens again after the break.')}
+
       <div class="studio-hero">
         <canvas class="hero-pot"></canvas>
         <div class="hero-text">
           <b>${current ? 'Your piece is waiting' : 'Ready when you are'}</b>
-          <p>${current ? 'Pick up right where you left off.' : 'Shape it, paint it, take your time. There is no timer and no wrong pot.'}</p>
-          <button class="btn primary small" data-act="${current ? 'continue' : 'new'}">${current ? 'Continue piece' : 'New piece'}</button>
-          ${current ? '<button class="link-btn" data-act="new">or start a new one</button>' : ''}
+          <p>${current?.editing ? 'You are reworking a piece from your shelf. The shelf keeps the old version until you put it back.' : current ? 'Pick up right where you left off.' : 'Shape it, paint it, take your time. There is no timer and no wrong pot.'}</p>
+          <button class="btn primary small" data-act="${current ? 'continue' : 'new'}" ${resting ? 'disabled' : ''}>${resting ? 'On a break' : current ? 'Continue piece' : 'New piece'}</button>
+          ${current && !resting ? `<button class="link-btn" data-act="new">${confirmReplace === 'new' ? 'Tap again to replace your unfinished piece' : 'or start a new one'}</button>` : ''}
         </div>
       </div>
 
@@ -95,10 +102,18 @@ export function potteryPage(root: HTMLElement): () => void {
     root.querySelector('.overlay')?.classList.add('hidden');
   }
 
+  function editLabel(pot: Pot): string {
+    if (isOnBreak()) return 'On a break';
+    if (confirmReplace === pot.id) return 'Replace your unfinished piece?';
+    return 'Continue working';
+  }
+
   function showPot(pot: Pot): void {
+    cancelAnimationFrame(frame);
     const overlay = openSheet(`
       <canvas class="sheet-pot"></canvas>
-      <button class="btn primary" data-act="close">Close</button>
+      <button class="btn primary" data-edit="${pot.id}" ${isOnBreak() ? 'disabled' : ''}>${editLabel(pot)}</button>
+      <button class="btn" data-act="close">Close</button>
       <button class="btn danger" data-remove="${pot.id}">Remove from shelf</button>
     `);
     const ctx = setupCanvas(overlay.querySelector('canvas')!, 300, 360);
@@ -129,14 +144,39 @@ export function potteryPage(root: HTMLElement): () => void {
   }
 
   root.addEventListener('click', (e) => {
-    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-pot],[data-remove]');
-    if (!target) return;
+    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-pot],[data-remove],[data-edit]');
+    if (!target || (target as HTMLButtonElement).disabled) return;
     sfx.click();
-    const { act, pot, remove } = target.dataset;
+    const { act, pot, remove, edit } = target.dataset;
+    const armed = confirmReplace;
+    confirmReplace = null;
     if (act === 'back') navigate('/');
     else if (act === 'continue') navigate('/pottery/wheel');
     else if (act === 'new') {
+      // Starting over throws away the unfinished piece, so ask first.
+      if (studio.current && armed !== 'new') {
+        confirmReplace = 'new';
+        render();
+        return;
+      }
       studio.current = { pot: newPot(), step: 'shape' };
+      persistStudio();
+      navigate('/pottery/wheel');
+    } else if (edit) {
+      const shelfPot = studio.shelf.find((p) => p.id === edit);
+      if (!shelfPot) return;
+      // Already reworking this piece: just go back to it.
+      if (studio.current?.pot.id === edit) {
+        navigate('/pottery/wheel');
+        return;
+      }
+      // A different unfinished piece is on the wheel: confirm before replacing it.
+      if (studio.current && armed !== edit) {
+        confirmReplace = edit;
+        showPot(shelfPot);
+        return;
+      }
+      studio.current = { pot: clonePot(shelfPot), step: 'shape', editing: true };
       persistStudio();
       navigate('/pottery/wheel');
     } else if (act === 'duel') showDuel();
@@ -148,6 +188,12 @@ export function potteryPage(root: HTMLElement): () => void {
     }
   });
 
+  // Entering the studio starts the shared play session; re-render when it starts or ends.
+  const stopListening = onPhaseChange(() => render());
+  ensureSession();
   render();
-  return () => cancelAnimationFrame(frame);
+  return () => {
+    stopListening();
+    cancelAnimationFrame(frame);
+  };
 }

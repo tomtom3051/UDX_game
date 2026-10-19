@@ -1,12 +1,13 @@
-// Small synthesised sound effects (WebAudio, no audio files).
-import { persist, save } from './state';
+// Small synthesised sound effects (WebAudio, no audio files). Music lives in music.ts.
+import { duckMusic, syncMusic } from './music';
+import { persistSettings, settings } from './settings';
 
 let ctx: AudioContext | null = null;
 let engine: { osc: OscillatorNode; gain: GainNode } | null = null;
 let wheel: { osc: OscillatorNode; gain: GainNode } | null = null;
 
 function audio(): AudioContext | null {
-  if (save.muted) return null;
+  if (!settings.effects) return null;
   try {
     ctx ??= new AudioContext();
     if (ctx.state === 'suspended') void ctx.resume();
@@ -104,6 +105,7 @@ export const sfx = {
 
   /** Low mower hum while a job is running. */
   engine(on: boolean): void {
+    duckMusic(on && settings.effects);
     if (!on) {
       if (engine && ctx) {
         engine.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
@@ -130,14 +132,31 @@ export const sfx = {
   },
 };
 
-export function toggleMute(): boolean {
-  if (!save.muted) {
+/** The quick mute buttons switch music and effects together. */
+export function isMuted(): boolean {
+  return !settings.music && !settings.effects;
+}
+
+export function setEffects(on: boolean): void {
+  if (!on) {
     sfx.engine(false);
     sfx.wheel(false);
   }
-  save.muted = !save.muted;
-  persist();
-  return save.muted;
+  settings.effects = on;
+  persistSettings();
+}
+
+export function setMusic(on: boolean): void {
+  settings.music = on;
+  persistSettings();
+  syncMusic();
+}
+
+export function toggleMute(): boolean {
+  const mute = !isMuted();
+  setEffects(!mute);
+  setMusic(!mute);
+  return mute;
 }
 
 /** Renders a mute toggle button and keeps its icon in sync. */
@@ -145,8 +164,8 @@ export function muteButton(): HTMLButtonElement {
   const btn = document.createElement('button');
   btn.className = 'icon-btn';
   const sync = () => {
-    btn.textContent = save.muted ? '🔇' : '🔊';
-    btn.setAttribute('aria-label', save.muted ? 'Turn sound on' : 'Turn sound off');
+    btn.textContent = isMuted() ? '🔇' : '🔊';
+    btn.setAttribute('aria-label', isMuted() ? 'Turn sound on' : 'Turn sound off');
   };
   sync();
   btn.addEventListener('click', () => {
